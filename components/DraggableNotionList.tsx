@@ -4,8 +4,8 @@ import DraggableFlatList, {
   RenderItemParams,
 } from "react-native-draggable-flatlist";
 import { NotionFile } from "@prisma/client/react-native";
-import DraggableNotionListItem from "./DraggableNotionListItem";
 import { baseClient, extendedClient } from "@/myDbModule";
+import { DraggableNotionListItem } from "./DraggableNotionListItem";
 
 interface Props {
   initialData: NotionFile[];
@@ -15,13 +15,9 @@ export default function DraggableNotionList({ initialData }: Props) {
   const [data, setData] = useState<NotionFile[]>(initialData);
 
   const renderItem = useCallback(
-    ({ item, drag, isActive }: RenderItemParams<NotionFile>) => (
+    ({ item, drag, isActive, getIndex }: RenderItemParams<NotionFile>) => (
       <ScaleDecorator activeScale={1.1}>
-        <DraggableNotionListItem
-          item={item}
-          onDrag={drag}
-          isActive={isActive}
-        />
+        <DraggableNotionListItem {...{ item, drag, isActive, getIndex }} />
       </ScaleDecorator>
     ),
     []

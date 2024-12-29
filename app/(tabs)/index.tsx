@@ -1,4 +1,4 @@
-import { SafeAreaView, StyleSheet } from "react-native";
+import { Button, SafeAreaView, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { extendedClient } from "@/myDbModule";
@@ -29,7 +29,7 @@ export default function HomeScreen() {
     const newNotion = {
       title: "Test Notion",
       content: "example",
-      icon: "",
+      icon: "🚀",
       description: "",
       type: "default",
       coverPhoto: "",
@@ -46,6 +46,7 @@ export default function HomeScreen() {
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.container}>
           <ThemedText>Welcome to Notion</ThemedText>
+          <Button title="Create Notion" onPress={createNotion} />
           {notion && notion.length > 0 ? (
             <DraggableNotionList initialData={notion} />
           ) : (
