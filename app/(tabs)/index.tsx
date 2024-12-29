@@ -1,65 +1,64 @@
-import { Button, SafeAreaView, StyleSheet } from "react-native"
-import { ThemedText } from "@/components/ThemedText"
-import { ThemedView } from "@/components/ThemedView"
-import { extendedClient } from "@/myDbModule"
-import { NotionFile } from "@prisma/client/react-native"
+import { SafeAreaView, StyleSheet } from "react-native";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { extendedClient } from "@/myDbModule";
+import DraggableNotionList from "@/components/DraggableNotionList";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function HomeScreen() {
-  const user = extendedClient.user.useFindFirst({
-    where: {
-      id: 1,
-    },
-  })
-
   const notion = extendedClient.notionFile.useFindMany({
     where: {
-      id: 1,
+      authorId: 1,
     },
-  })
-  console.log(notion)
+    orderBy: {
+      order: "asc",
+    },
+  });
+
+  console.log("Notion data:", notion);
 
   const createUser = () => {
-    const newUser = { name: "Myat", email: "myat@gmail.com" }
+    const newUser = { name: "Myat", email: "myat@gmail.com" };
     extendedClient.user.create({
       data: newUser,
-    })
-    console.log("Success")
-  }
+    });
+    console.log("Success");
+  };
 
   const createNotion = () => {
-    const newNotion: NotionFile = {
-      id: 1,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      authorId: 1,
+    const newNotion = {
       title: "Test Notion",
       content: "example",
       icon: "",
       description: "",
       type: "default",
       coverPhoto: "",
-      parentFileId: null,
-      order: 0,
-    }
+      authorId: 1,
+    };
     extendedClient.notionFile.create({
       data: newNotion,
-    })
-    console.log("Success")
-  }
+    });
+    console.log("Success");
+  };
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView>
-        <ThemedText>Welcome to Notion</ThemedText>
-        {/* <Button title="Create User" onPress={createUser} /> */}
-        <Button title="Create User" onPress={createNotion} />
-      </SafeAreaView>
-    </ThemedView>
-  )
+    <GestureHandlerRootView style={styles.container}>
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.container}>
+          <ThemedText>Welcome to Notion</ThemedText>
+          {notion && notion.length > 0 ? (
+            <DraggableNotionList initialData={notion} />
+          ) : (
+            <ThemedText>No items found</ThemedText>
+          )}
+        </SafeAreaView>
+      </ThemedView>
+    </GestureHandlerRootView>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-})
+});
