@@ -1,9 +1,12 @@
-import { Pressable, StyleSheet, View } from "react-native";
-import { NotionFile } from "@prisma/client/react-native";
-import { ThemedText } from "./ThemedText";
-import { RenderItemParams } from "react-native-draggable-flatlist";
-import { useState } from "react";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { Pressable, StyleSheet, useColorScheme, View } from "react-native"
+import { NotionFile } from "@prisma/client/react-native"
+import { ThemedText } from "./ThemedText"
+import { RenderItemParams } from "react-native-draggable-flatlist"
+import { useState } from "react"
+import Ionicons from "@expo/vector-icons/Ionicons"
+import { extendedClient } from "@/myDbModule"
+import { Colors } from "@/constants/Colors"
+import { useActionSheet } from "@expo/react-native-action-sheet"
 
 export function DraggableNotionListItem({
   drag,
@@ -17,14 +20,40 @@ export function DraggableNotionListItem({
       drag={drag}
       isActive={isActive}
     />
-  );
+  )
 }
 
+type InnerNotionListItemProps = {
+  parentId: number | undefined
+}
+
+function InnerNotionListItem({ parentId }: InnerNotionListItemProps) {
+  const theme = useColorScheme() ?? "light"
+  const iconColor = theme === "light" ? Colors.light.icon : Colors.dark.icon
+  const childs = extendedClient.notionFile.useFindMany({
+    where: { parentFileId: parentId },
+  })
+
+  if (childs.length === 0)
+    return <ThemedText style={{ color: "grey" }}>No pages inside!</ThemedText>
+
+  return (
+    <View>
+      {childs.map((notionFile: NotionFile) => (
+        <NotionFileItem
+          key={notionFile.id}
+          iconColor={iconColor}
+          notionFile={notionFile}
+        />
+      ))}
+    </View>
+  )
+}
 interface NotionFileItemProps {
-  notionFile: NotionFile;
-  iconColor: string;
-  drag?: () => void;
-  isActive?: boolean;
+  notionFile: NotionFile
+  iconColor: string
+  drag?: () => void
+  isActive?: boolean
 }
 
 function NotionFileItem({
@@ -33,7 +62,36 @@ function NotionFileItem({
   drag,
   isActive,
 }: NotionFileItemProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const { showActionSheetWithOptions } = useActionSheet()
+  const [isOpen, setIsOpen] = useState(false)
+
+  const onPress = (id: number) => {
+    const options = ["Delete", "Cancel"]
+    const destructiveButtonIndex = 0
+    const cancelButtonIndex = 1
+
+    showActionSheetWithOptions(
+      {
+        options,
+        destructiveButtonIndex,
+        cancelButtonIndex,
+      },
+      (selectedIndex: number | undefined) => {
+        switch (selectedIndex) {
+          case destructiveButtonIndex: {
+            extendedClient.notionFile.delete({
+              where: {
+                id: id,
+              },
+            })
+            break
+          }
+          case cancelButtonIndex: {
+          }
+        }
+      }
+    )
+  }
 
   return (
     <View>
@@ -52,16 +110,20 @@ function NotionFileItem({
           </ThemedText>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Pressable onPress={() => {}}>
+          <Pressable onPress={() => onPress(notionFile.id)}>
             <Ionicons name="ellipsis-horizontal" size={18} color={iconColor} />
           </Pressable>
 
           <Ionicons name="add" size={22} color={iconColor} />
         </View>
       </Pressable>
-      {isOpen ? <View></View> : null}
+      {isOpen ? (
+        <View style={styles.content}>
+          <InnerNotionListItem parentId={notionFile.id} />
+        </View>
+      ) : null}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -75,4 +137,4 @@ const styles = StyleSheet.create({
   content: {
     marginLeft: 24,
   },
-});
+})
