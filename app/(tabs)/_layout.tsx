@@ -13,6 +13,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: false,
+        tabBarShowLabel: false,
       }}
     >
       <Tabs.Screen
@@ -51,7 +52,7 @@ export default function TabLayout() {
           unmountOnBlur: true,
           headerShown: true,
           headerTitle: "",
-          headerStyle: { shadowColor: "transparent" },
+          // headerStyle: { shadowColor: "transparent" },
         }}
       />
     </Tabs>
