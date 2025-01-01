@@ -1,11 +1,11 @@
-import NotionButton from "@/components/NotionButton"
-import { ThemedText } from "@/components/ThemedText"
-import { ThemedView } from "@/components/ThemedView"
-import { Colors } from "@/constants/Colors"
-import { extendedClient } from "@/myDbModule"
-import { NotionFile } from "@prisma/client/react-native"
-import { useLocalSearchParams, useRouter } from "expo-router"
-import React, { useEffect, useRef, useState } from "react"
+import NotionButton from "@/components/NotionButton";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Colors";
+import { extendedClient } from "@/myDbModule";
+import { NotionFile } from "@prisma/client/react-native";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -16,22 +16,27 @@ import {
   InputAccessoryView,
   Pressable,
   View,
-} from "react-native"
+  Keyboard,
+  TouchableOpacity,
+} from "react-native";
+import {
+  MarkdownTextInput,
+  parseExpensiMark,
+} from "@expensify/react-native-live-markdown";
+import { markdownDarkStyle, markdownStyle } from "@/constants/MarkDownStyle";
 
 const EXAMPLE_CONTENT = [
   "# Insert subtitle here!",
-  "Hello, *world*! I'm excited to share this with you.",
-  "Visit my website: codewithbeto.dev",
-  "> This is a blockquote, a great way to highlight quotes or important notes.",
-  "`inline code` is useful for highlighting code within a sentence.",
-  "Here's a code block example:",
-  "```\n// Codeblock\nconsole.log('🚀 Ready to launch!');\n```",
-  "Mentions:",
-  "- @here (notify everyone)",
-  "- @beto@expo.dev (mention a specific user)",
-  "Use #hashtags to organize content, like this: #mention-report",
-].join("\n")
-const inputAccessoryViewID = "newNotion"
+  "# Myat Thiri's Development Notes",
+  "Hello! I'm a React Native Developer working with Prisma and Expo.",
+  "Visit my GitHub: [MyatThiri](https://github.com/myatthiri98)",
+  "> Tip: Use `Test-Driven Development (TDD)` to enhance your code quality.",
+  "Code snippet example:",
+  "```\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n```",
+  "Here are some quick links:",
+  "- #ReactNative #Expo #Prisma",
+].join("\n");
+const inputAccessoryViewID = "newNotion";
 const defaultIcons = [
   "🚀",
   "👻",
@@ -68,48 +73,48 @@ const defaultIcons = [
   "📈",
   "🏠",
   "🎉",
-]
+];
 
 const randomIcon = () =>
-  defaultIcons[Math.floor(Math.random() * defaultIcons.length)]
+  defaultIcons[Math.floor(Math.random() * defaultIcons.length)];
 
 export default function NewNotionScreen() {
-  const theme = useColorScheme()
+  const theme = useColorScheme();
   const routeParams = useLocalSearchParams<{
-    parentId?: string
-    viewingFile?: string
-  }>()
-  const router = useRouter()
+    parentId?: string;
+    viewingFile?: string;
+  }>();
+  const router = useRouter();
   const viewingFile: NotionFile = routeParams.viewingFile
     ? JSON.parse(routeParams.viewingFile)
-    : null
+    : null;
 
   const childFiles = extendedClient.notionFile.useFindMany({
     where: {
       parentFileId: viewingFile?.id ?? -1,
     },
-  })
+  });
   const parentFile = extendedClient.notionFile.useFindUnique({
     where: {
       id: viewingFile?.parentFileId ?? -1,
     },
-  })
-  const titleRef = useRef<TextInput>(null)
-  const [title, setTitle] = useState(viewingFile ? viewingFile?.title : "")
-  const [text, setText] = useState(viewingFile ? viewingFile?.content : "")
+  });
+  const titleRef = useRef<TextInput>(null);
+  const [title, setTitle] = useState(viewingFile ? viewingFile?.title : "");
+  const [text, setText] = useState(viewingFile ? viewingFile?.content : "");
   const [icon, setIcon] = useState(
     viewingFile ? viewingFile?.icon : () => randomIcon()
-  )
-  const backgroundColor = Colors[theme!].background as any
-  const textColor = Colors[theme!].text as any
+  );
+  const backgroundColor = Colors[theme!].background as any;
+  const textColor = Colors[theme!].text as any;
   useEffect(() => {
     if (titleRef.current) {
-      titleRef.current?.focus()
+      titleRef.current?.focus();
     }
-  }, [theme])
+  }, [theme]);
 
   function handleSaveNotionFile() {
-    if (!title) return
+    if (!title) return;
     const data = {
       title: title,
       description: "",
@@ -124,32 +129,32 @@ export default function NewNotionScreen() {
         : viewingFile
         ? viewingFile.parentFileId
         : null,
-    }
+    };
 
     try {
       if (viewingFile) {
-        console.log("updating")
+        console.log("updating");
         extendedClient.notionFile.update({
           where: { id: viewingFile.id },
           data: data,
-        })
+        });
       } else {
-        console.log("creating")
+        console.log("creating");
         extendedClient.notionFile.create({
           data: data,
-        })
+        });
       }
 
-      setTitle("")
-      setText("")
-      setIcon(randomIcon())
-      router.setParams({ parentId: "", viewingFile: "" })
+      setTitle("");
+      setText("");
+      setIcon(randomIcon());
+      router.setParams({ parentId: "", viewingFile: "" });
       if (router.canDismiss()) {
-        router.dismissAll()
+        router.dismissAll();
       }
-      router.replace("/(tabs)/")
+      router.replace("/(tabs)/");
     } catch (e) {
-      Alert.alert("Something went wrong :(")
+      Alert.alert("Something went wrong :(");
     }
   }
   return (
@@ -169,6 +174,42 @@ export default function NewNotionScreen() {
               blurOnSubmit={false}
               inputAccessoryViewID={inputAccessoryViewID}
               multiline
+            />
+            {childFiles.length > 0 ? (
+              <View>
+                <ThemedText>Inner files: {childFiles.length}</ThemedText>
+                {childFiles.map((child) => (
+                  <Link
+                    key={child.id}
+                    href={{
+                      pathname: "/new-notion",
+                      params: { viewingFile: JSON.stringify(child) },
+                    }}
+                    push
+                    asChild
+                  >
+                    <TouchableOpacity>
+                      <ThemedText style={{ color: "#007AFf" }}>
+                        - {child.icon} {child.title}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </Link>
+                ))}
+              </View>
+            ) : null}
+            <MarkdownTextInput
+              key={theme}
+              value={text}
+              defaultValue={text}
+              placeholder="Tap here to continue..."
+              onChangeText={setText}
+              style={{ color: textColor, lineHeight: 28 }}
+              markdownStyle={
+                theme === "dark" ? markdownDarkStyle : markdownStyle
+              }
+              inputAccessoryViewID={inputAccessoryViewID}
+              multiline
+              parser={parseExpensiMark}
             />
           </ThemedView>
         </ScrollView>
@@ -202,11 +243,15 @@ export default function NewNotionScreen() {
               </Pressable>
             ))}
             {/* </ScrollView> */}
+            <NotionButton
+              iconName="arrow-down"
+              onPress={() => Keyboard.dismiss()}
+            />
           </View>
         </InputAccessoryView>
       </ThemedView>
     </>
-  )
+  );
 }
 const styles = StyleSheet.create({
   container: { padding: 10 },
@@ -218,4 +263,4 @@ const styles = StyleSheet.create({
     height: 50,
     borderTopWidth: 0.5,
   },
-})
+});
