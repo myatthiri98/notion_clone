@@ -4,8 +4,11 @@ import { ThemedView } from "@/components/ThemedView";
 import { extendedClient } from "@/myDbModule";
 import DraggableNotionList from "@/components/DraggableNotionList";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useState, useEffect } from "react";
 
 export default function HomeScreen() {
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const notion = extendedClient.notionFile.useFindMany({
     where: {
       authorId: 1,
@@ -13,7 +16,27 @@ export default function HomeScreen() {
     orderBy: {
       order: "asc",
     },
+    include: {
+      subFiles: true,
+    },
   });
+
+  // More frequent refresh during data changes
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const refresh = async () => {
+      await extendedClient.$refreshSubscriptions();
+      setRefreshKey((prev) => prev + 1);
+      timeoutId = setTimeout(refresh, 500);
+    };
+
+    refresh();
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, []);
 
   console.log("Notion data:", notion);
 
@@ -46,9 +69,8 @@ export default function HomeScreen() {
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.container}>
           <ThemedText>Welcome to Notion</ThemedText>
-          <Button title="Create Notion" onPress={createNotion} />
           {notion && notion.length > 0 ? (
-            <DraggableNotionList initialData={notion} />
+            <DraggableNotionList key={refreshKey} initialData={notion} />
           ) : (
             <ThemedText>No items found</ThemedText>
           )}

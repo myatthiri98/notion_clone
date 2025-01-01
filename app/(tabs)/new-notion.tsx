@@ -4,7 +4,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { extendedClient } from "@/myDbModule";
 import { NotionFile } from "@prisma/client/react-native";
-import { Link, useLocalSearchParams, useRouter } from "expo-router";
+import { Link, Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -113,7 +113,7 @@ export default function NewNotionScreen() {
     }
   }, [theme]);
 
-  function handleSaveNotionFile() {
+  async function handleSaveNotionFile() {
     if (!title) return;
     const data = {
       title: title,
@@ -133,22 +133,23 @@ export default function NewNotionScreen() {
 
     try {
       if (viewingFile) {
-        console.log("updating");
-        extendedClient.notionFile.update({
+        await extendedClient.notionFile.update({
           where: { id: viewingFile.id },
           data: data,
         });
       } else {
-        console.log("creating");
-        extendedClient.notionFile.create({
+        await extendedClient.notionFile.create({
           data: data,
         });
       }
+
+      await extendedClient.$refreshSubscriptions();
 
       setTitle("");
       setText("");
       setIcon(randomIcon());
       router.setParams({ parentId: "", viewingFile: "" });
+
       if (router.canDismiss()) {
         router.dismissAll();
       }
@@ -160,6 +161,30 @@ export default function NewNotionScreen() {
   return (
     <>
       <ThemedView style={{ flex: 1 }}>
+        <Stack.Screen
+          options={{
+            headerRight: () =>
+              title ? (
+                <NotionButton
+                  title="Done"
+                  onPress={handleSaveNotionFile}
+                  containerStyle={{ marginRight: 10 }}
+                />
+              ) : (
+                <NotionButton
+                  iconName="close"
+                  onPress={() => {
+                    router.setParams({ parentId: "", viewingFile: "" });
+                    if (router.canDismiss()) {
+                      router.dismissAll();
+                    }
+                    router.replace("/(tabs)/");
+                  }}
+                  containerStyle={{ marginRight: 10 }}
+                />
+              ),
+          }}
+        />
         <ScrollView keyboardShouldPersistTaps="always">
           <ThemedView style={styles.container}>
             {icon && (

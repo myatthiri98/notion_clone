@@ -3,8 +3,9 @@ import DraggableFlatList, {
   ScaleDecorator,
   RenderItemParams,
 } from "react-native-draggable-flatlist";
+import { baseClient } from "@/myDbModule";
+import { runOnJS } from "react-native-reanimated";
 import { NotionFile } from "@prisma/client/react-native";
-import { baseClient, extendedClient } from "@/myDbModule";
 import { DraggableNotionListItem } from "./DraggableNotionListItem";
 
 interface Props {
@@ -23,10 +24,7 @@ export default function DraggableNotionList({ initialData }: Props) {
     []
   );
 
-  const handleDragEnd = async ({ data: newData }: { data: NotionFile[] }) => {
-    setData(newData);
-
-    // Update all items with their new order
+  const updateOrder = useCallback(async (newData: NotionFile[]) => {
     const updates = newData.map((file, index) =>
       baseClient.notionFile.update({
         where: { id: file.id },
@@ -36,11 +34,18 @@ export default function DraggableNotionList({ initialData }: Props) {
 
     try {
       await baseClient.$transaction(updates);
-      await extendedClient.$refreshSubscriptions();
     } catch (error) {
       console.error("Failed to update order:", error);
     }
-  };
+  }, []);
+
+  const handleDragEnd = useCallback(
+    ({ data: newData }: { data: NotionFile[] }) => {
+      setData(newData);
+      runOnJS(updateOrder)(newData);
+    },
+    [updateOrder]
+  );
 
   return (
     <DraggableFlatList

@@ -1,12 +1,13 @@
-import { Pressable, StyleSheet, useColorScheme, View } from "react-native"
-import { NotionFile } from "@prisma/client/react-native"
-import { ThemedText } from "./ThemedText"
-import { RenderItemParams } from "react-native-draggable-flatlist"
-import { useState } from "react"
-import Ionicons from "@expo/vector-icons/Ionicons"
-import { extendedClient } from "@/myDbModule"
-import { Colors } from "@/constants/Colors"
-import { useActionSheet } from "@expo/react-native-action-sheet"
+import { Pressable, StyleSheet, useColorScheme, View } from "react-native";
+import { NotionFile } from "@prisma/client/react-native";
+import { ThemedText } from "./ThemedText";
+import { RenderItemParams } from "react-native-draggable-flatlist";
+import { useState } from "react";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { extendedClient } from "@/myDbModule";
+import { Colors } from "@/constants/Colors";
+import { useActionSheet } from "@expo/react-native-action-sheet";
+import { Link } from "expo-router";
 
 export function DraggableNotionListItem({
   drag,
@@ -20,22 +21,22 @@ export function DraggableNotionListItem({
       drag={drag}
       isActive={isActive}
     />
-  )
+  );
 }
 
 type InnerNotionListItemProps = {
-  parentId: number | undefined
-}
+  parentId: number | undefined;
+};
 
 function InnerNotionListItem({ parentId }: InnerNotionListItemProps) {
-  const theme = useColorScheme() ?? "light"
-  const iconColor = theme === "light" ? Colors.light.icon : Colors.dark.icon
+  const theme = useColorScheme() ?? "light";
+  const iconColor = theme === "light" ? Colors.light.icon : Colors.dark.icon;
   const childs = extendedClient.notionFile.useFindMany({
     where: { parentFileId: parentId },
-  })
+  });
 
   if (childs.length === 0)
-    return <ThemedText style={{ color: "grey" }}>No pages inside!</ThemedText>
+    return <ThemedText style={{ color: "grey" }}>No pages inside!</ThemedText>;
 
   return (
     <View>
@@ -47,13 +48,13 @@ function InnerNotionListItem({ parentId }: InnerNotionListItemProps) {
         />
       ))}
     </View>
-  )
+  );
 }
 interface NotionFileItemProps {
-  notionFile: NotionFile
-  iconColor: string
-  drag?: () => void
-  isActive?: boolean
+  notionFile: NotionFile;
+  iconColor: string;
+  drag?: () => void;
+  isActive?: boolean;
 }
 
 function NotionFileItem({
@@ -62,13 +63,13 @@ function NotionFileItem({
   drag,
   isActive,
 }: NotionFileItemProps) {
-  const { showActionSheetWithOptions } = useActionSheet()
-  const [isOpen, setIsOpen] = useState(false)
+  const { showActionSheetWithOptions } = useActionSheet();
+  const [isOpen, setIsOpen] = useState(false);
 
   const onPress = (id: number) => {
-    const options = ["Delete", "Cancel"]
-    const destructiveButtonIndex = 0
-    const cancelButtonIndex = 1
+    const options = ["Delete", "Cancel"];
+    const destructiveButtonIndex = 0;
+    const cancelButtonIndex = 1;
 
     showActionSheetWithOptions(
       {
@@ -83,47 +84,60 @@ function NotionFileItem({
               where: {
                 id: id,
               },
-            })
-            break
+            });
+            break;
           }
           case cancelButtonIndex: {
           }
         }
       }
-    )
-  }
+    );
+  };
 
   return (
     <View>
-      <Pressable style={styles.heading} disabled={isActive} onPressIn={drag}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Pressable onPress={() => setIsOpen((value) => !value)}>
-            <Ionicons
-              name={isOpen ? "chevron-down" : "chevron-forward-outline"}
-              size={18}
-              style={{ marginRight: 12 }}
-              color={iconColor}
-            />
-          </Pressable>
-          <ThemedText type="defaultSemiBold" numberOfLines={1}>
-            {notionFile.icon} {notionFile.title}
-          </ThemedText>
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Pressable onPress={() => onPress(notionFile.id)}>
-            <Ionicons name="ellipsis-horizontal" size={18} color={iconColor} />
-          </Pressable>
+      <Link
+        asChild
+        push
+        href={{
+          pathname: "/new-notion",
+          params: { viewingFile: JSON.stringify(notionFile) },
+        }}
+      >
+        <Pressable style={styles.heading} disabled={isActive} onPressIn={drag}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Pressable onPress={() => setIsOpen((value) => !value)}>
+              <Ionicons
+                name={isOpen ? "chevron-down" : "chevron-forward-outline"}
+                size={18}
+                style={{ marginRight: 12 }}
+                color={iconColor}
+              />
+            </Pressable>
+            <ThemedText type="defaultSemiBold" numberOfLines={1}>
+              {notionFile.icon} {notionFile.title}
+            </ThemedText>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Pressable onPress={() => onPress(notionFile.id)}>
+              <Ionicons
+                name="ellipsis-horizontal"
+                size={18}
+                color={iconColor}
+              />
+            </Pressable>
 
-          <Ionicons name="add" size={22} color={iconColor} />
-        </View>
-      </Pressable>
+            <Ionicons name="add" size={22} color={iconColor} />
+          </View>
+        </Pressable>
+      </Link>
       {isOpen ? (
         <View style={styles.content}>
           <InnerNotionListItem parentId={notionFile.id} />
         </View>
       ) : null}
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -137,4 +151,4 @@ const styles = StyleSheet.create({
   content: {
     marginLeft: 24,
   },
-})
+});
