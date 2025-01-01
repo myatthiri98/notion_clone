@@ -1,3 +1,4 @@
+import NotionButton from "@/components/NotionButton"
 import { ThemedText } from "@/components/ThemedText"
 import { ThemedView } from "@/components/ThemedView"
 import { Colors } from "@/constants/Colors"
@@ -178,6 +179,17 @@ export default function NewNotionScreen() {
           <View
             style={[styles.accesoryView, { borderColor: textColor + "20" }]}
           >
+            <View style={{ flexDirection: "row", gap: 7 }}>
+              <NotionButton
+                title="AI"
+                iconName="sparkles"
+                onPress={() => setText(EXAMPLE_CONTENT)}
+              />
+              <NotionButton
+                iconName="images"
+                onPress={() => Alert.alert("Coming soon!")}
+              />
+            </View>
             {/* <ScrollView
             horizontal
             contentContainerStyle={{ gap: 6 }}
